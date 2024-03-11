@@ -19,13 +19,10 @@ db = SQLAlchemy(app)
 with app.app_context():
     db.create_all()
 
-if __name__ == '__main__':
-    socketio.run(app)
-
 # Book model for the library inventory
 class Room(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(50), unique=True)
+    id = db.Column(db.Integer, primary_key=True, nullable=False)
+    title = db.Column(db.String(50), unique=True, nullable=False)
     password = db.Column(db.String(50))
 
 # Define constants
@@ -45,9 +42,22 @@ def get_page_range(current_page, total_pages, max_page_buttons=5):
 
     return range(current_page - half_buttons, current_page + half_buttons + 1)
 
-# Route for the main page
 @app.route("/")
 def index():
+    return redirect(url_for("rooms"))
+
+# @app.route("/addroom", method="POST")
+# def addroom():
+#     if request.method == "POST":
+#         try:
+#             new_room = Room(
+#                 id=request.form["id"],
+                
+#             )
+
+
+@app.route("/rooms")
+def rooms():
     page = request.args.get("page", 1, type=int)
     rooms_per_page = request.args.get(
         "rooms_per_page", DEFAULT_ROOMS_PER_PAGE, type=int
@@ -62,28 +72,6 @@ def index():
         rooms_per_page=rooms_per_page,
     )
 
-@socketio.on('join')
-def on_join(data):
-    username = data['username']
-    room = data['room']
-    join_room(room)
-    send(username + ' has entered the room.', to=room)
-
-@socketio.on('leave')
-def on_leave(data):
-    username = data['username']
-    room = data['room']
-    leave_room(room)
-    send(username + ' has left the room.', to=room)
-
-@socketio.on('message')
-def handle_message(message):
-    send(message)
-
-@socketio.on('json')
-def handle_json(json):
-    send(json, json=True)
-
-@socketio.on('my event')
-def handle_my_custom_event(json):
-    emit('my response', json)
+if __name__ == '__main__':
+    app.secret_key = "super_secret_key"  # Change this to a random, secure key
+    socketio.run(app,debug=True)
